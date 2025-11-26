@@ -5,6 +5,7 @@ services:
     image: apache/hadoop:3
     container_name: namenode
     hostname: namenode
+    user: "0:0"
     command: ["hdfs", "namenode"]
     ports:
       - "9870:9870"  
@@ -22,7 +23,10 @@ services:
   datanode:
     image: apache/hadoop:3
     container_name: datanode
+    user: "0:0"
     command: ["hdfs", "datanode"]
+    depends_on:
+      - namenode
     env_file:
       - ./config/hadoop.env
     environment:
@@ -38,7 +42,10 @@ services:
     image: apache/hadoop:3
     container_name: resourcemanager
     hostname: resourcemanager
+    user: "0:0"
     command: ["yarn", "resourcemanager"]
+    depends_on:
+      - namenode
     ports:
       - "8088:8088"  
     env_file:
@@ -52,7 +59,10 @@ services:
   nodemanager:
     image: apache/hadoop:3
     container_name: nodemanager
+    user: "0:0"
     command: ["yarn", "nodemanager"]
+    depends_on:
+      - resourcemanager
     env_file:
       - ./config/hadoop.env
     volumes:
