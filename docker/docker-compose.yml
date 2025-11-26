@@ -1,0 +1,69 @@
+version: "3.8"
+
+services:
+  namenode:
+    image: apache/hadoop:3
+    container_name: namenode
+    hostname: namenode
+    command: ["hdfs", "namenode"]
+    ports:
+      - "9870:9870"  
+    env_file:
+      - ./config/hadoop.env
+    environment:
+      ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
+    volumes:
+      - namenode-data:/tmp/hadoop-root/dfs/name
+      - ./config/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./config/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+    networks:
+      - hadoop
+
+  datanode:
+    image: apache/hadoop:3
+    container_name: datanode
+    command: ["hdfs", "datanode"]
+    env_file:
+      - ./config/hadoop.env
+    environment:
+      ENSURE_DATANODE_DIR: "/tmp/hadoop-root/dfs/data"
+    volumes:
+      - datanode-data:/tmp/hadoop-root/dfs/data
+      - ./config/core-site.xml:/opt/hadoop/etc/hadoop/core-site.xml
+      - ./config/hdfs-site.xml:/opt/hadoop/etc/hadoop/hdfs-site.xml
+    networks:
+      - hadoop
+
+  resourcemanager:
+    image: apache/hadoop:3
+    container_name: resourcemanager
+    hostname: resourcemanager
+    command: ["yarn", "resourcemanager"]
+    ports:
+      - "8088:8088"  
+    env_file:
+      - ./config/hadoop.env
+    volumes:
+      - ./config/yarn-site.xml:/opt/hadoop/etc/hadoop/yarn-site.xml
+      - ./config/mapred-site.xml:/opt/hadoop/etc/hadoop/mapred-site.xml
+    networks:
+      - hadoop
+
+  nodemanager:
+    image: apache/hadoop:3
+    container_name: nodemanager
+    command: ["yarn", "nodemanager"]
+    env_file:
+      - ./config/hadoop.env
+    volumes:
+      - ./config/yarn-site.xml:/opt/hadoop/etc/hadoop/yarn-site.xml
+      - ./config/mapred-site.xml:/opt/hadoop/etc/hadoop/mapred-site.xml
+    networks:
+      - hadoop
+
+volumes:
+  namenode-data:
+  datanode-data:
+
+networks:
+  hadoop:
