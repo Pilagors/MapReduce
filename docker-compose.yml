@@ -6,7 +6,15 @@ services:
     build: .
     container_name: namenode
     hostname: namenode
-    command: ["hdfs", "namenode"]
+    command: >
+      bash -c "
+        if [ ! -d /tmp/hadoop-root/dfs/name/current ]; then
+          echo '  Le NameNode n est pas formate. Formatage en cours...'
+          /opt/hadoop/bin/hdfs namenode -format -force -nonInteractive
+        else
+          echo '  Le NameNode est deja formate.'
+        fi &&
+        /opt/hadoop/bin/hdfs namenode"
     ports:
       - "9870:9870"
       - "9000:9000"
@@ -19,7 +27,7 @@ services:
       - ./config:/opt/hadoop/etc/hadoop
       - .:/opt/project
       #chemin vers le dataset a utiliser
-      - ./dataset/
+      - ./dataset:/data/input-data
     networks:
       - hadoop_cluster
 
