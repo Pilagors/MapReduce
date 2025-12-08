@@ -1,0 +1,112 @@
+version: "3"
+
+services:
+  # --- MAÎTRES (MASTERS) ---
+  namenode:
+    build: .
+    container_name: namenode
+    hostname: namenode
+    command: ["hdfs", "namenode"]
+    ports:
+      - "9870:9870"
+      - "9000:9000"
+    env_file:
+      - ./config/hadoop.env
+    environment:
+      ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
+    volumes:
+      - namenode-data:/tmp/hadoop-root/dfs/name
+      - ./config:/opt/hadoop/etc/hadoop
+      - .:/opt/project
+      #chemin vers le dataset a utiliser
+      - ./dataset/
+    networks:
+      - hadoop_cluster
+
+  resourcemanager:
+    build: .
+    container_name: resourcemanager
+    hostname: resourcemanager
+    command: ["yarn", "resourcemanager"]
+    ports:
+      - "8088:8088"
+    depends_on:
+      - namenode
+    env_file:
+      - ./config/hadoop.env
+    volumes:
+      - ./config:/opt/hadoop/etc/hadoop
+      - .:/opt/project
+    networks:
+      - hadoop_cluster
+
+  # --- ESCLAVES 1 (WORKER 1) ---
+  datanode-1:
+    build: .
+    container_name: datanode-1
+    hostname: datanode-1
+    command: ["hdfs", "datanode"]
+    depends_on:
+      - namenode
+    env_file:
+      - ./config/hadoop.env
+    volumes:
+      - datanode-1-data:/tmp/hadoop-root/dfs/data
+      - ./config:/opt/hadoop/etc/hadoop
+    networks:
+      - hadoop_cluster
+
+  nodemanager-1:
+    build: .
+    container_name: nodemanager-1
+    hostname: nodemanager-1
+    command: ["yarn", "nodemanager"]
+    depends_on:
+      - resourcemanager
+      - datanode-1
+    env_file:
+      - ./config/hadoop.env
+    volumes:
+      - ./config:/opt/hadoop/etc/hadoop
+    networks:
+      - hadoop_cluster
+
+  # --- ESCLAVES 2 (WORKER 2) ---
+  datanode-2:
+    build: .
+    container_name: datanode-2
+    hostname: datanode-2
+    command: ["hdfs", "datanode"]
+    depends_on:
+      - namenode
+    env_file:
+      - ./config/hadoop.env
+    volumes:
+      - datanode-2-data:/tmp/hadoop-root/dfs/data
+      - ./config:/opt/hadoop/etc/hadoop
+    networks:
+      - hadoop_cluster
+
+  nodemanager-2:
+    build: .
+    container_name: nodemanager-2
+    hostname: nodemanager-2
+    command: ["yarn", "nodemanager"]
+    depends_on:
+      - resourcemanager
+      - datanode-2
+    env_file:
+      - ./config/hadoop.env
+    volumes:
+      - ./config:/opt/hadoop/etc/hadoop
+    networks:
+      - hadoop_cluster
+
+# Volumes persistants pour ne pas perdre les données au redémarrage
+volumes:
+  namenode-data:
+  datanode-1-data:
+  datanode-2-data:
+
+networks:
+  hadoop_cluster:
