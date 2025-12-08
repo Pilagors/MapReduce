@@ -1,0 +1,102 @@
+version: "3"
+
+services:
+  # --- NameNode (Le Cerveau du stockage) ---
+  namenode:
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
+    container_name: namenode
+    hostname: namenode
+    restart: always
+    ports:
+      - "9870:9870"   # Web UI HDFS
+      - "9000:9000"   # Accès fichiers (IPC)
+    env_file:
+      - ./config/hadoop.env
+    volumes:
+      - namenode-data:/hadoop/dfs/name
+      - ./dataset:/dataset
+    networks:
+      - hadoop_cluster
+
+  # --- ResourceManager (Le Cerveau du calcul/YARN) ---
+  resourcemanager:
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
+    container_name: resourcemanager
+    hostname: resourcemanager
+    restart: always
+    ports:
+      - "8088:8088"   # Web UI YARN
+    env_file:
+      - ./config/hadoop.env
+    depends_on:
+      - namenode
+    networks:
+      - hadoop_cluster
+
+  # --- DataNode 1 ---
+  datanode-1:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode-1
+    hostname: datanode-1
+    restart: always
+    depends_on:
+      - namenode
+    env_file:
+      - ./config/hadoop.env
+    volumes:
+      - datanode1-data:/hadoop/dfs/data
+    networks:
+      - hadoop_cluster
+
+  # --- NodeManager 1 ---
+  nodemanager-1:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: nodemanager-1
+    hostname: nodemanager-1
+    restart: always
+    env_file:
+      - ./config/hadoop.env
+    depends_on:
+      - resourcemanager
+      - datanode-1
+    networks:
+      - hadoop_cluster
+
+  # --- DataNode 2 ---
+  datanode-2:
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
+    container_name: datanode-2
+    hostname: datanode-2
+    restart: always
+    depends_on:
+      - namenode
+    env_file:
+      - ./config/hadoop.env
+    volumes:
+      - datanode2-data:/hadoop/dfs/data
+    networks:
+      - hadoop_cluster
+
+  # --- NodeManager 2 ---
+  nodemanager-2:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: nodemanager-2
+    hostname: nodemanager-2
+    restart: always
+    env_file:
+      - ./config/hadoop.env
+    depends_on:
+      - resourcemanager
+      - datanode-2
+    networks:
+      - hadoop_cluster
+
+
+volumes:
+  namenode-data:
+  datanode1-data:
+  datanode2-data:
+
+networks:
+  hadoop_cluster:
+    name: hadoop_cluster
