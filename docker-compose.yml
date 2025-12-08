@@ -1,112 +1,76 @@
 version: "3"
 
 services:
-  # --- MAÎTRES (MASTERS) ---
+  # --- NameNode ---
   namenode:
-    build: .
+    image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     container_name: namenode
     hostname: namenode
-    command: ["hdfs", "namenode"]
+    restart: always
     ports:
-      - "9870:9870"
-      - "9000:9000"
+      - "9870:9870"   # Web UI
+      - "9000:9000"   # HDFS
     env_file:
       - ./config/hadoop.env
-    environment:
-      ENSURE_NAMENODE_DIR: "/tmp/hadoop-root/dfs/name"
     volumes:
-      - namenode-data:/tmp/hadoop-root/dfs/name
-      - ./config:/opt/hadoop/etc/hadoop
-      - .:/opt/project
-      #chemin vers le dataset a utiliser
-      - ./dataset/
+      - namenode-data:/hadoop/dfs/name
+      - ./src/main/resources/dataset:/dataset
     networks:
       - hadoop_cluster
 
+  # --- ResourceManager ---
   resourcemanager:
-    build: .
+    image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
     container_name: resourcemanager
     hostname: resourcemanager
-    command: ["yarn", "resourcemanager"]
+    restart: always
     ports:
-      - "8088:8088"
-    depends_on:
-      - namenode
+      - "8088:8088"   # YARN UI
     env_file:
       - ./config/hadoop.env
-    volumes:
-      - ./config:/opt/hadoop/etc/hadoop
-      - .:/opt/project
+    depends_on:
+      - namenode
     networks:
       - hadoop_cluster
 
-  # --- ESCLAVES 1 (WORKER 1) ---
+  # --- DataNode 1 ---
   datanode-1:
-    build: .
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
     container_name: datanode-1
     hostname: datanode-1
-    command: ["hdfs", "datanode"]
+    restart: always
     depends_on:
       - namenode
     env_file:
       - ./config/hadoop.env
     volumes:
-      - datanode-1-data:/tmp/hadoop-root/dfs/data
-      - ./config:/opt/hadoop/etc/hadoop
+      - datanode1-data:/hadoop/dfs/data
     networks:
       - hadoop_cluster
 
+  # --- NodeManager 1 ---
   nodemanager-1:
-    build: .
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
     container_name: nodemanager-1
     hostname: nodemanager-1
-    command: ["yarn", "nodemanager"]
+    restart: always
+    env_file:
+      - ./config/hadoop.env
     depends_on:
       - resourcemanager
       - datanode-1
-    env_file:
-      - ./config/hadoop.env
-    volumes:
-      - ./config:/opt/hadoop/etc/hadoop
     networks:
       - hadoop_cluster
 
-  # --- ESCLAVES 2 (WORKER 2) ---
+  # --- DataNode 2 ---
   datanode-2:
-    build: .
+    image: bde2020/hadoop-datanode:2.0.0-hadoop3.2.1-java8
     container_name: datanode-2
     hostname: datanode-2
-    command: ["hdfs", "datanode"]
+    restart: always
     depends_on:
       - namenode
     env_file:
       - ./config/hadoop.env
     volumes:
-      - datanode-2-data:/tmp/hadoop-root/dfs/data
-      - ./config:/opt/hadoop/etc/hadoop
-    networks:
-      - hadoop_cluster
-
-  nodemanager-2:
-    build: .
-    container_name: nodemanager-2
-    hostname: nodemanager-2
-    command: ["yarn", "nodemanager"]
-    depends_on:
-      - resourcemanager
-      - datanode-2
-    env_file:
-      - ./config/hadoop.env
-    volumes:
-      - ./config:/opt/hadoop/etc/hadoop
-    networks:
-      - hadoop_cluster
-
-# Volumes persistants pour ne pas perdre les données au redémarrage
-volumes:
-  namenode-data:
-  datanode-1-data:
-  datanode-2-data:
-
-networks:
-  hadoop_cluster:
+      - d
