@@ -1,31 +1,31 @@
 version: "3"
 
 services:
-  # --- NameNode ---
+  # --- NameNode (Le Cerveau du stockage) ---
   namenode:
     image: bde2020/hadoop-namenode:2.0.0-hadoop3.2.1-java8
     container_name: namenode
     hostname: namenode
     restart: always
     ports:
-      - "9870:9870"   # Web UI
-      - "9000:9000"   # HDFS
+      - "9870:9870"   # Web UI HDFS
+      - "9000:9000"   # Accès fichiers (IPC)
     env_file:
       - ./config/hadoop.env
     volumes:
       - namenode-data:/hadoop/dfs/name
-      - ./src/main/resources/dataset:/dataset
+      - ./dataset:/dataset
     networks:
       - hadoop_cluster
 
-  # --- ResourceManager ---
+  # --- ResourceManager (Le Cerveau du calcul/YARN) ---
   resourcemanager:
     image: bde2020/hadoop-resourcemanager:2.0.0-hadoop3.2.1-java8
     container_name: resourcemanager
     hostname: resourcemanager
     restart: always
     ports:
-      - "8088:8088"   # YARN UI
+      - "8088:8088"   # Web UI YARN
     env_file:
       - ./config/hadoop.env
     depends_on:
@@ -73,4 +73,30 @@ services:
     env_file:
       - ./config/hadoop.env
     volumes:
-      - d
+      - datanode2-data:/hadoop/dfs/data
+    networks:
+      - hadoop_cluster
+
+  # --- NodeManager 2 ---
+  nodemanager-2:
+    image: bde2020/hadoop-nodemanager:2.0.0-hadoop3.2.1-java8
+    container_name: nodemanager-2
+    hostname: nodemanager-2
+    restart: always
+    env_file:
+      - ./config/hadoop.env
+    depends_on:
+      - resourcemanager
+      - datanode-2
+    networks:
+      - hadoop_cluster
+
+
+volumes:
+  namenode-data:
+  datanode1-data:
+  datanode2-data:
+
+networks:
+  hadoop_cluster:
+    name: hadoop_cluster
